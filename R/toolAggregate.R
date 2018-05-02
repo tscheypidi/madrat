@@ -266,6 +266,7 @@ toolAggregate <- function(x, rel, weight=NULL, from=NULL, to=NULL, dim=1, partre
     if(dim==3) out <- wrap(out,map=list(2,3,1))
     
     getComment(out) <- c(comment,paste0("Data aggregated (toolAggregate): ",date()))
-    return(updateMetadata(as.magpie(out,spatial=1,temporal=2),x,unit="copy",calcHistory="copy"))
+    out <- as.magpie(out,spatial=1,temporal=2)
+    return(updateMetadata(out,x,unit="copy",calcHistory="copy"))
   }
 }
