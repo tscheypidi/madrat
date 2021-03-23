@@ -33,6 +33,7 @@
 #' @examples
 #' madrat:::fingerprint("toolGetMapping", package="madrat")
 #' @importFrom digest digest
+#' @importFrom stringi stri_extract_all
 
 fingerprint <- function(name, details=FALSE, graph = NULL, ...) {
   d <- getDependencies(name, direction = "in", self = TRUE, graph = graph, ...)
@@ -78,7 +79,24 @@ fingerprintFunction <- function(name) {
   .tmp <- function(x) {
     f <- try(eval(parse(text = x)), silent = TRUE)
     if ("try-error" %in% class(f)) return(NULL)
-    return(digest(deparse(f), algo = getConfig("hash")))
+    out <- list()
+    out$code <- deparse(f)
+    if (!grepl("toolGetMapping|toolAggregate", x)) {
+      getMappings <- stri_extract_all(paste(out$code, collapse = ""), regex = "toolGetMapping\\([^)]*\\)")[[1]]
+      if (all(!is.na(getMappings))) {
+        for (g in getMappings) {
+          g <- gsub(" +"," ",g)
+          f <- try(eval(parse(text = g)), silent = TRUE)
+          if ("try-error" %in% class(f)) {
+            vcat(0,"Could not create hash for: ",g)
+          } else {
+            vcat(4,"Fingerprint created for: ",g, show_prefix = FALSE)
+            out$extra <- c(out$extra, digest(f, algo = getConfig("hash")))
+          }
+        }
+      }
+    }
+    return(digest(out, algo = getConfig("hash")))
   }
   return(unlist(sapply(name, .tmp)))
 }
